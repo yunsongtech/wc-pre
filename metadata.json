@@ -1,0 +1,6 @@
+{
+  "name": "世界杯数智战术观赛大厅",
+  "description": "世界杯未来主义科技感战术观赛大厅与智能战术闹钟配置，集成AI赛事预测、精彩与实时威胁度指数、高能实时唤醒及IoT全屋观赛联动。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
