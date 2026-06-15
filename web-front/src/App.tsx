@@ -28,6 +28,11 @@ import {
 } from 'lucide-react';
 import { mockMatches, defaultIoTDevices } from './mockData';
 import { Match, IoTDeviceState, AIPrediction, SystemLog, WakeupMode, AlarmSettings } from './types';
+import TeamRadarChart from './components/TeamRadarChart';
+import { useLiveMatch } from './hooks/useLiveMatch';
+import { fetchRadar, iotGoalCelebration, iotWakeupAction, predictMatchLegacy } from './api/client';
+import type { RadarComparison } from './api/types';
+import { requestWakeLock, setupWakeLockVisibilityHandler } from './utils/wakeLock';
 
 export default function App() {
   // Application state
@@ -46,6 +51,7 @@ export default function App() {
   const [prediction, setPrediction] = useState<AIPrediction | null>(null);
   const [loadingPredict, setLoadingPredict] = useState<boolean>(false);
   const [predictionCache, setPredictionCache] = useState<Record<string, AIPrediction>>({});
+  const [radarData, setRadarData] = useState<RadarComparison | null>(null);
 
   // Alarm settings state (for editing)
   const [editingSettings, setEditingSettings] = useState<AlarmSettings | null>(null);
@@ -78,43 +84,24 @@ export default function App() {
     ]);
   };
 
-  // Pulse simulation for real-time threat update
+  const liveEnabled = isSimulating && selectedMatch.status === 'LIVE';
+  const { threatPercent, ei: liveEI, history: liveHistory, alarmTrigger } = useLiveMatch(selectedMatch.id, liveEnabled);
+
   useEffect(() => {
-    let interval: any;
-    if (isSimulating) {
-      interval = setInterval(() => {
-        // Find if selected match is LIVE
-        if (selectedMatch.status === 'LIVE') {
-          const delta = Math.floor(Math.random() * 11) - 5; // -5 to +5
-          const newThreat = Math.max(10, Math.min(100, currentThreat + delta));
-          setCurrentThreat(newThreat);
-          setThreatHistory(prev => [...prev.slice(1), newThreat]);
-
-          // Update match in state
-          setMatches(prev => prev.map(m => {
-            if (m.id === selectedMatch.id) {
-              return { ...m, threatIndex: newThreat };
-            }
-            return m;
-          }));
-
-          // Heartbeat visual indicator update
-          if (newThreat > 80 && Math.random() > 0.6) {
-            addLog(`[威胁雷达] 检测到前场高危进攻，威胁度攀升至 ${newThreat}%。`, 'TRIGGER');
-            
-            // Check if AI Tactical Alarm is armed and meets threshold
-            if (selectedMatch.alarmSettings?.enabled) {
-              const alarm = selectedMatch.alarmSettings;
-              if (alarm.mode === 'AI_TACTICAL' && newThreat >= alarm.threatThreshold) {
-                triggerWakeUpPanel('DANGER', `战术威胁高能预警 (危害度: ${newThreat}%)`, `${selectedMatch.homeTeam.name} 组织禁区撕扯压制，射门概率骤增！`);
-              }
-            }
-          }
-        }
-      }, 3500);
+    if (liveEnabled && liveHistory.length > 0) {
+      setCurrentThreat(Math.round(liveHistory[liveHistory.length - 1]));
+      setThreatHistory(liveHistory);
+      setMatches(prev => prev.map(m => m.id === selectedMatch.id ? { ...m, threatIndex: Math.round(liveHistory[liveHistory.length - 1]), excitementIndex: Math.round(liveEI * 10) } : m));
     }
-    return () => clearInterval(interval);
-  }, [isSimulating, currentThreat, selectedMatch]);
+  }, [liveEnabled, liveHistory, liveEI, selectedMatch.id]);
+
+  useEffect(() => {
+    if (alarmTrigger) {
+      triggerWakeUpPanel('DANGER', alarmTrigger.title, alarmTrigger.description);
+    }
+  }, [alarmTrigger]);
+
+  useEffect(() => setupWakeLockVisibilityHandler(), []);
 
   // Fetch or fall back prediction
   const fetchPrediction = async (match: Match) => {
@@ -129,18 +116,19 @@ export default function App() {
     }
 
     try {
-      const res = await fetch('/api/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          matchId: match.id,
-          homeTeam: match.homeTeam,
-          awayTeam: match.awayTeam
-        })
+      const data = await predictMatchLegacy({
+        matchId: match.id,
+        homeTeam: match.homeTeam,
+        awayTeam: match.awayTeam,
       });
-      const data = await res.json();
       setPrediction(data);
       setPredictionCache(prev => ({ ...prev, [match.id]: data }));
+      try {
+        const radar = await fetchRadar(match.id);
+        setRadarData(radar);
+      } catch {
+        setRadarData(null);
+      }
       addLog(`AI战术复盘解析生成完毕：建议度极高，闷战风险系数判定。`, 'INFO');
     } catch (e) {
       addLog(`智能端接入异常，使用本地高性能战术决策引擎渲染。`, 'INFO');
@@ -198,6 +186,9 @@ export default function App() {
     // If IoT sync is enabled and changed, apply light preset
     if (editingSettings.enabled && editingSettings.iotSyncEnabled) {
       applyIotPreset('TACTICAL');
+    }
+    if (editingSettings.enabled) {
+      void requestWakeLock();
     }
 
     setIsSettingsOpen(false);
@@ -282,15 +273,18 @@ export default function App() {
 
     addLog(`「智能唤醒」机制触发！类型: ${type} - 联动全屋闪。`, 'ALARM');
 
-    // Light flash triggers
     if (selectedMatch.alarmSettings?.iotSyncEnabled) {
       if (type === 'GOAL') {
+        void iotGoalCelebration('demo-user', selectedMatch.id);
         applyIotPreset('GOLD');
       } else if (type === 'BORING') {
         applyIotPreset('SLEEP');
       } else {
+        void iotWakeupAction('demo-user', selectedMatch.id);
         applyIotPreset('TACTICAL');
       }
+    } else if (type === 'GOAL') {
+      void iotGoalCelebration('demo-user', selectedMatch.id);
     }
   };
 
@@ -921,7 +915,7 @@ export default function App() {
                 <span className="text-[10px] uppercase text-slate-400 font-mono tracking-wider block">实时前场威胁系数:</span>
                 <div className="flex items-baseline space-x-2">
                   <span className="text-3xl font-mono font-bold text-red-400 glow-text-emerald-400">
-                    {selectedMatch.status === 'LIVE' ? currentThreat : '0'}%
+                    {selectedMatch.status === 'LIVE' ? (liveEnabled ? threatPercent : currentThreat) : '0'}%
                   </span>
                   <span className="text-xs text-slate-400">
                     {selectedMatch.status === 'LIVE' 
@@ -938,7 +932,7 @@ export default function App() {
                   <div className="w-full h-full bg-[radial-gradient(#10b981_1px,transparent_1px)] bg-[size:10px_10px]"></div>
                 </div>
 
-                {selectedMatch.status === 'LIVE' ? threatHistory.map((val, idx) => {
+                {selectedMatch.status === 'LIVE' ? (liveEnabled && liveHistory.length ? liveHistory : threatHistory).map((val, idx) => {
                   const barHeight = val * 0.8; // scaling factor
                   const isHigh = val > 75;
                   return (
@@ -970,7 +964,7 @@ export default function App() {
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="text-slate-400">精彩指数 (Entertainment Level):</span>
                   <span className="text-emerald-400 font-mono font-bold">
-                    {selectedMatch.status === 'LIVE' ? selectedMatch.excitementIndex : selectedMatch.status === 'FINISHED' ? selectedMatch.excitementIndex : 'AI待推演'}%
+                    {selectedMatch.status === 'LIVE' ? Math.round(liveEI * 10) : selectedMatch.status === 'FINISHED' ? selectedMatch.excitementIndex : prediction ? Math.round(prediction.excitementRating) : 'AI待推演'}%
                   </span>
                 </div>
                 <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
@@ -1012,7 +1006,18 @@ export default function App() {
 
           </section>
 
-          {/* Tactical Detailed Breakdown Card from Gemini API */}
+          {radarData && (
+            <section className="glass-panel rounded-xl p-5 border border-white/10">
+              <h3 className="font-display font-medium text-sm text-white tracking-wider mb-3">战术能力雷达图</h3>
+              <TeamRadarChart
+                data={radarData}
+                homeName={selectedMatch.homeTeam.name}
+                awayName={selectedMatch.awayTeam.name}
+              />
+            </section>
+          )}
+
+          {/* Tactical Detailed Breakdown Card from Go API */}
           <section className="glass-panel rounded-xl p-5 border border-white/10" id="ai-tactics-breakdown-card">
             
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/5">

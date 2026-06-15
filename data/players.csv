@@ -1,0 +1,15 @@
+player_id,team_id,name,position
+p-arg-1,ARG,梅西,FW
+p-arg-2,ARG,劳塔罗,FW
+p-arg-3,ARG,德保罗,MF
+p-fra-1,FRA,姆巴佩,FW
+p-fra-2,FRA,格列兹曼,MF
+p-fra-3,FRA,楚阿梅尼,MF
+p-bra-1,BRA,维尼修斯,FW
+p-bra-2,BRA,罗德里戈,FW
+p-esp-1,ESP,亚马尔,FW
+p-esp-2,ESP,佩德里,MF
+p-hrv-1,HRV,莫德里奇,MF
+p-hrv-2,HRV,格瓦迪奥尔,DF
+p-mar-1,MAR,阿什拉夫,DF
+p-mar-2,MAR,齐耶赫,MF

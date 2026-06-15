@@ -1,0 +1,13 @@
+columns:
+  team_id: ["team_id", "Team ID", "id"]
+  name_zh: ["name_zh", "Name", "Club"]
+  name_en: ["name_en", "English Name", "Nation"]
+  iso2: ["iso2", "ISO2", "Nation ISO"]
+  fifa_rank: ["fifa_rank", "FIFA Rank", "World Ranking"]
+  attack: ["attack", "Att", "Attacking"]
+  defense: ["defense", "Def", "Defending"]
+  midfield: ["midfield", "Mid", "Midfield"]
+  pace: ["pace", "Pac", "Pace"]
+  technique: ["technique", "Tec", "Technique"]
+  mentality: ["mentality", "Men", "Mentality"]
+  formation: ["formation", "Formation", "Tactic"]

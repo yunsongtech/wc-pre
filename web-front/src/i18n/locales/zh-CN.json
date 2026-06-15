@@ -1,0 +1,26 @@
+{
+  "radar": {
+    "title": "战术能力雷达图",
+    "attack": "进攻",
+    "defense": "防守",
+    "midfield": "中场",
+    "pace": "速度",
+    "technique": "技术",
+    "mentality": "心理",
+    "macroGdp": "宏观实力",
+    "elo": "ELO",
+    "ei": "精彩指数",
+    "semantic": "语义分",
+    "home": "主队",
+    "away": "客队"
+  },
+  "live": {
+    "threat": "实时前场威胁系数",
+    "ei": "赛事精彩指数",
+    "offline": "已离线 / 未开赛"
+  },
+  "predict": {
+    "loading": "正在请求 AI 智能引擎分析...",
+    "failed": "智能端接入异常"
+  }
+}

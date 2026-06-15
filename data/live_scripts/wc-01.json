@@ -1,0 +1,7 @@
+[
+  {"type": "GOAL", "minute": 23, "homeScore": 1, "awayScore": 0, "message": "主队首开纪录", "delayMs": 2000},
+  {"type": "GOAL", "minute": 55, "homeScore": 1, "awayScore": 1, "message": "客队扳平比分", "delayMs": 3000},
+  {"type": "PENALTY", "minute": 78, "homeScore": 1, "awayScore": 1, "message": "禁区内犯规，点球判罚", "delayMs": 4000},
+  {"type": "MINUTE_80", "minute": 80, "homeScore": 1, "awayScore": 1, "message": "进入绝杀高发期", "delayMs": 2000},
+  {"type": "VAR_REVIEW", "minute": 85, "homeScore": 1, "awayScore": 1, "message": "VAR 审查关键红牌", "delayMs": 3000}
+]

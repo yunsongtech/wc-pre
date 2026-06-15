@@ -1,0 +1,35 @@
+[
+  {
+    "id": "wc-01",
+    "group": "决赛组 (Finals)",
+    "status": "LIVE",
+    "kickoffISO": "2026-06-15T20:00:00Z",
+    "homeTeamId": "ARG",
+    "awayTeamId": "FRA",
+    "score": { "home": 1, "away": 1 },
+    "timeElapsed": "72:15",
+    "isKnockout": true
+  },
+  {
+    "id": "wc-02",
+    "group": "半决赛 B (Semi Final B)",
+    "status": "SCHEDULED",
+    "kickoffISO": "2026-06-15T23:00:00Z",
+    "homeTeamId": "BRA",
+    "awayTeamId": "ESP",
+    "score": { "home": 0, "away": 0 },
+    "timeElapsed": "00:00",
+    "isKnockout": true
+  },
+  {
+    "id": "wc-03",
+    "group": "小组赛 A 轮 (Group A)",
+    "status": "FINISHED",
+    "kickoffISO": "2026-06-14T18:00:00Z",
+    "homeTeamId": "HRV",
+    "awayTeamId": "MAR",
+    "score": { "home": 0, "away": 0 },
+    "timeElapsed": "90:00",
+    "isKnockout": false
+  }
+]
